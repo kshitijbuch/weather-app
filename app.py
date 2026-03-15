@@ -342,8 +342,9 @@ wind_dir    = get_wind_direction(wind_deg)
 visibility  = round(current.get("visibility", 0) / 1000, 1)  # m → km
 pressure    = current["main"]["pressure"]
 
-sunrise     = datetime.fromtimestamp(current["sys"]["sunrise"]).strftime("%H:%M")
-sunset      = datetime.fromtimestamp(current["sys"]["sunset"]).strftime("%H:%M")
+tz_offset   = current.get("timezone", 0)  # seconds offset from UTC
+sunrise     = datetime.utcfromtimestamp(current["sys"]["sunrise"] + tz_offset).strftime("%H:%M")
+sunset      = datetime.utcfromtimestamp(current["sys"]["sunset"] + tz_offset).strftime("%H:%M")
 
 st.markdown(f"""
 <div class="weather-card">
@@ -436,5 +437,7 @@ if forecast_data:
         st.markdown(f"<hr style='margin:0;border:none;border-top:1px solid rgba(255,255,255,0.07);{"" if i==len(daily)-1 else ""}'>" if i < len(daily)-1 else "", unsafe_allow_html=True)
 
 # ── Last updated ──────────────────────────────────────────────────────────────
-now = datetime.now().strftime("%d %b %Y, %I:%M %p")
+from datetime import timezone, timedelta
+city_tz = timezone(timedelta(seconds=tz_offset))
+now = datetime.now(city_tz).strftime("%d %b %Y, %I:%M %p")
 st.markdown(f'<div class="last-updated">Last updated: {now}</div>', unsafe_allow_html=True)
