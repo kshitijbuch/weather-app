@@ -39,10 +39,10 @@ st.markdown("""
 
     /* Search input */
     .stTextInput > div > div > input {
-        background: rgba(255,255,255,0.1) !important;
-        border: 2px solid rgba(255,255,255,0.3) !important;
+        background: rgba(255,255,255,0.95) !important;
+        border: 2px solid rgba(255,255,255,0.6) !important;
         border-radius: 50px !important;
-        color: white !important;
+        color: #1a1a2e !important;
         font-size: 18px !important;
         text-align: center !important;
         padding: 12px 20px !important;
@@ -407,28 +407,33 @@ with c6:
 # ── 5-Day Forecast ────────────────────────────────────────────────────────────
 if forecast_data:
     daily = parse_daily_forecast(forecast_data)
-    forecast_rows = ""
-    for d in daily:
-        emoji_f = get_weather_emoji(d["icon"])
-        forecast_rows += f"""
-        <div class="forecast-row">
-            <span class="forecast-day">{d['day'][:3]}<br>
-                <span style="font-size:12px;color:rgba(255,255,255,0.4)">{d['date']}</span>
-            </span>
-            <span class="forecast-icon">{emoji_f}</span>
-            <span class="forecast-desc">{d['desc']}</span>
-            <span class="forecast-temps">
-                <span class="forecast-high">{d['high']}°</span>
-                <span class="forecast-low">{d['low']}°</span>
-            </span>
-        </div>"""
+    st.markdown("""
+    <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+                border-radius:20px;padding:20px 16px;margin:12px 0;">
+        <div style="font-size:13px;color:rgba(255,255,255,0.5);text-transform:uppercase;
+                    letter-spacing:2px;margin-bottom:16px;">📅 5-Day Forecast</div>
+    </div>""", unsafe_allow_html=True)
 
-    st.markdown(f"""
-    <div class="forecast-card">
-        <div class="forecast-title">📅 5-Day Forecast</div>
-        {forecast_rows}
-    </div>
-    """, unsafe_allow_html=True)
+    for i, d in enumerate(daily):
+        emoji_f = get_weather_emoji(d["icon"])
+        border = "" if i == len(daily)-1 else "border-bottom:1px solid rgba(255,255,255,0.07);"
+        col1, col2, col3, col4 = st.columns([2, 1, 3, 2])
+        with col1:
+            st.markdown(f"""<div style="color:white;font-size:15px;font-weight:500;padding:8px 0;">
+                {d['day'][:3]}<br>
+                <span style="font-size:12px;color:rgba(255,255,255,0.4);">{d['date']}</span>
+            </div>""", unsafe_allow_html=True)
+        with col2:
+            st.markdown(f"<div style='font-size:24px;padding:8px 0;'>{emoji_f}</div>", unsafe_allow_html=True)
+        with col3:
+            st.markdown(f"""<div style="color:rgba(255,255,255,0.6);font-size:14px;
+                text-transform:capitalize;padding:10px 0;">{d['desc']}</div>""", unsafe_allow_html=True)
+        with col4:
+            st.markdown(f"""<div style="text-align:right;padding:8px 0;">
+                <span style="color:white;font-size:16px;font-weight:700;">{d['high']}°</span>
+                <span style="color:rgba(255,255,255,0.45);font-size:14px;margin-left:6px;">{d['low']}°</span>
+            </div>""", unsafe_allow_html=True)
+        st.markdown(f"<hr style='margin:0;border:none;border-top:1px solid rgba(255,255,255,0.07);{"" if i==len(daily)-1 else ""}'>" if i < len(daily)-1 else "", unsafe_allow_html=True)
 
 # ── Last updated ──────────────────────────────────────────────────────────────
 now = datetime.now().strftime("%d %b %Y, %I:%M %p")
