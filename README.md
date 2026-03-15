@@ -58,21 +58,6 @@ Opens at **http://localhost:8501**
 
 ---
 
-## 🌐 Deploy Your Own for Free
-
-Want your own live version? Deploy free on Streamlit Cloud in 5 minutes:
-
-1. **Fork this repo** (click Fork at the top right)
-2. Go to [share.streamlit.io](https://share.streamlit.io) → sign in with GitHub
-3. Click **New app** → select your forked repo → `app.py` → Deploy
-4. In App Settings → Secrets, add:
-   ```toml
-   OPENWEATHER_API_KEY = "your_openweathermap_key"
-   ```
-5. Done — share your link with anyone!
-
----
-
 ## 🛠️ Tech Stack
 
 | Component | Technology |
@@ -119,4 +104,7 @@ If this helped you or you simply like what you see:
 
 ## 📄 License
 
-MIT — free to use, modify and distribute.
+Licensed under the [Apache License 2.0](./LICENSE).
+
+You are free to use and modify this project **with attribution** —  
+credit must be given to the original author: **Kshitij Buch** (github.com/kshitijbuch).
