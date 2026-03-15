@@ -1,91 +1,122 @@
-# Weather App — Setup & Deployment Guide
+# 🌤️ Weather App
 
-## Folder Structure
-```
-weather_app/
-├── app.py                    ← Main app
-├── requirements.txt          ← Dependencies
-├── .streamlit/
-│   └── secrets.toml          ← Your API key (never share this file)
-└── README.md
-```
+A clean, mobile-friendly weather app built with Python and Streamlit.  
+Get real-time weather + 5-day forecast for any city in the world — instantly.
+
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://weather-app-kjscqpzlkta6pbvimwuyxi.streamlit.app)
+
+> ⭐ **If you find this useful, please star this repo — it helps others find it!**
 
 ---
 
-## Step 1 — Get Free OpenWeatherMap API Key
+## 🔗 Live Demo
 
-1. Go to https://openweathermap.org/api
-2. Click "Sign Up" — free account
-3. Go to "API Keys" tab in your account
-4. Copy your default API key (or create a new one)
-5. Note: takes up to 2 hours to activate after signup
+**👉 [https://weather-app-kjscqpzlkta6pbvimwuyxi.streamlit.app](https://weather-app-kjscqpzlkta6pbvimwuyxi.streamlit.app)**
+
+No installation needed — open the link on any phone or browser and search your city.
 
 ---
 
-## Step 2 — Add API Key Locally
+## ✨ Features
 
-Edit the file: `.streamlit/secrets.toml`
-
-```toml
-OPENWEATHER_API_KEY = "paste_your_key_here"
-```
+- 🌡️ **Current weather** — temperature, feels like, weather condition
+- 💧 **Humidity, wind speed & direction**
+- 👁️ **Visibility & atmospheric pressure**
+- 🌅 **Sunrise & sunset times** in the city's local timezone
+- 📅 **5-day forecast** with daily high/low temperatures
+- 🔍 **Search any city** worldwide
+- 📱 **Mobile-friendly** dark UI — works great on phones
+- ⚡ **Fast & lightweight** — just Python + Streamlit + OpenWeatherMap
 
 ---
 
-## Step 3 — Run Locally (Test First)
+## 🚀 Run It Yourself Locally
 
-Open Anaconda Prompt, activate jobagent:
-```cmd
-conda activate jobagent
-cd "C:\Users\Kshitij Buch\weather_app"
+### Prerequisites
+- Python 3.9+
+- Free [OpenWeatherMap API key](https://openweathermap.org/api) (takes ~2 hours to activate after signup)
+
+### Setup
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/kshitijbuch/weather-app.git
+cd weather-app
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Add your API key
+mkdir .streamlit
+echo 'OPENWEATHER_API_KEY = "your_key_here"' > .streamlit/secrets.toml
+
+# 4. Run the app
 streamlit run app.py
 ```
 
-Opens at http://localhost:8501
-Test it — search Mumbai, Delhi, London etc.
+Opens at **http://localhost:8501**
 
 ---
 
-## Step 4 — Deploy Free on Streamlit Cloud (Share with Family)
+## 🌐 Deploy Your Own for Free
 
-This gives you a public link like: https://kshitij-weather.streamlit.app
+Want your own live version? Deploy free on Streamlit Cloud in 5 minutes:
 
-1. Create free account at https://github.com (if you don't have one)
-2. Create a new repository called `weather-app`
-3. Upload these files to the repo:
-   - app.py
-   - requirements.txt
-   (Do NOT upload secrets.toml — keep that private)
-
-4. Go to https://share.streamlit.io
-5. Sign in with GitHub
-6. Click "New app" → select your repo → select app.py → Deploy
-
-7. After deployment, go to App Settings → Secrets
-8. Add your API key there:
+1. **Fork this repo** (click Fork at the top right)
+2. Go to [share.streamlit.io](https://share.streamlit.io) → sign in with GitHub
+3. Click **New app** → select your forked repo → `app.py` → Deploy
+4. In App Settings → Secrets, add:
+   ```toml
+   OPENWEATHER_API_KEY = "your_openweathermap_key"
    ```
-   OPENWEATHER_API_KEY = "your_key_here"
-   ```
-
-9. Share the link with family — works on any phone browser!
+5. Done — share your link with anyone!
 
 ---
 
-## Features
-- 🌤️ Current weather with emoji icons
-- 🌡️ Temperature + feels like
-- 💧 Humidity, wind speed & direction
-- 👁️ Visibility, pressure
-- 🌅 Sunrise & sunset times
-- 📅 5-day forecast
-- 🔍 Search any city worldwide
-- 📱 Mobile-friendly dark UI
+## 🛠️ Tech Stack
+
+| Component | Technology |
+|---|---|
+| Language | Python 3.11 |
+| Web Framework | Streamlit |
+| Weather Data | OpenWeatherMap API |
+| Hosting | Streamlit Cloud (free) |
+| UI | Custom CSS — dark gradient theme |
 
 ---
 
-## Default City
-App opens with Mumbai by default.
-To change: edit line in app.py:
-```python
-st.session_state.city = "Mumbai"  # change to your city
+## 📁 Project Structure
+
 ```
+weather-app/
+├── app.py              ← Main application
+├── requirements.txt    ← Python dependencies
+├── .gitignore          ← Keeps secrets.toml out of GitHub
+└── README.md           ← This file
+```
+
+> ⚠️ Never commit `.streamlit/secrets.toml` — your API key lives there locally.
+> On Streamlit Cloud, add it via App Settings → Secrets instead.
+
+---
+
+## 🙌 Support This Project
+
+If this helped you or you simply like what you see:
+
+- ⭐ **Star this repo** — one click, means a lot
+- 🍴 **Fork it** and build your own version
+- 🐛 Found a bug? Open an [issue](https://github.com/kshitijbuch/weather-app/issues)
+
+---
+
+## 👤 Author
+
+**Kshitij Buch** — Mumbai, India
+[github.com/kshitijbuch](https://github.com/kshitijbuch)
+
+---
+
+## 📄 License
+
+MIT — free to use, modify and distribute.
