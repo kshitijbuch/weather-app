@@ -24,9 +24,27 @@ No installation needed — open the link on any phone or browser and search your
 - 👁️ **Visibility & atmospheric pressure**
 - 🌅 **Sunrise & sunset times** in the city's local timezone
 - 📅 **5-day forecast** with daily high/low temperatures
-- 🔍 **Search any city** worldwide
+- 🔍 **Search any city** worldwide by name
+- 📍 **Use My Location** — detect weather via GPS automatically
 - 📱 **Mobile-friendly** dark UI — works great on phones
 - ⚡ **Fast & lightweight** — just Python + Streamlit + OpenWeatherMap
+
+---
+
+## 📍 How Location Detection Works
+
+The app supports two ways to get weather:
+
+**Option 1 — Search by city name**
+Type any city name in the search bar and press **Go**.
+
+**Option 2 — Use GPS location**
+1. Click **📍 Use My Location**
+2. Allow location access when browser asks
+3. Tap the coordinates box that appears to copy
+4. Paste into the coordinates field and press **Go**
+
+> Uses OpenWeatherMap reverse geocoding — no third-party location service needed.
 
 ---
 
@@ -65,6 +83,7 @@ Opens at **http://localhost:8501**
 | Language | Python 3.11 |
 | Web Framework | Streamlit |
 | Weather Data | OpenWeatherMap API |
+| Location | Browser GPS + OWM Reverse Geocoding |
 | Hosting | Streamlit Cloud (free) |
 | UI | Custom CSS — dark gradient theme |
 
@@ -80,8 +99,17 @@ weather-app/
 └── README.md           ← This file
 ```
 
-> ⚠️ Never commit `.streamlit/secrets.toml` — your API key lives there locally.
+> ⚠️ Never commit `.streamlit/secrets.toml` — your API key lives there locally.  
 > On Streamlit Cloud, add it via App Settings → Secrets instead.
+
+---
+
+## 🌿 Branches
+
+| Branch | Purpose |
+|---|---|
+| `main` | Stable production version |
+| `feature/geolocation` | GPS location detection feature (merged) |
 
 ---
 
@@ -97,7 +125,7 @@ If this helped you or you simply like what you see:
 
 ## 👤 Author
 
-**Kshitij Buch** — Mumbai, India
+**Kshitij Buch** — Mumbai, India  
 [github.com/kshitijbuch](https://github.com/kshitijbuch)
 
 ---
