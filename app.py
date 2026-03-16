@@ -48,7 +48,7 @@ st.markdown("""
         padding: 12px 20px !important;
     }
     .stTextInput > div > div > input::placeholder {
-        color: rgba(255,255,255,0.5) !important;
+        color: rgba(0,0,0,0.4) !important;
     }
     .stTextInput > label {display: none;}
 
