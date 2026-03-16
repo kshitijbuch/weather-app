@@ -254,6 +254,19 @@ def get_forecast(city: str):
         return r.json(), None
     return None, "Could not fetch forecast."
 
+def get_city_from_coords(lat: float, lon: float):
+    """Reverse geocode lat/lon to city name using OpenWeatherMap."""
+    try:
+        url = f"{BASE_URL}/weather"
+        params = {"lat": lat, "lon": lon, "appid": API_KEY, "units": "metric"}
+        r = requests.get(url, params=params, timeout=10)
+        if r.status_code == 200:
+            return r.json().get("name", None), None
+        return None, "Could not detect city from coordinates."
+    except Exception as e:
+        return None, f"Reverse geocoding failed: {e}"
+
+
 def parse_daily_forecast(forecast_data):
     """Extract one entry per day (noon reading preferred)."""
     daily = {}
@@ -286,23 +299,181 @@ def parse_daily_forecast(forecast_data):
     return result
 
 # ── UI ────────────────────────────────────────────────────────────────────────
+import streamlit.components.v1 as components
+
 st.markdown('<div class="app-title">🌤️ WEATHER</div>', unsafe_allow_html=True)
 
-# Search bar
-col1, col2 = st.columns([4, 1])
-with col1:
-    city_input = st.text_input("city", placeholder="Search city...", label_visibility="collapsed")
-with col2:
-    search_btn = st.button("Go", use_container_width=True)
-
-# Default city
+# ── Session state defaults ────────────────────────────────────────────────────
 if "city" not in st.session_state:
     st.session_state.city = "Mumbai"
+if "coords_processed" not in st.session_state:
+    st.session_state.coords_processed = ""
+if "active_field" not in st.session_state:
+    st.session_state.active_field = "city"  # "city" or "coords"
 
-if search_btn and city_input.strip():
-    st.session_state.city = city_input.strip()
-elif not city_input and not search_btn:
-    pass  # use session state default
+# ── Search bar (city name) ────────────────────────────────────────────────────
+city_input = st.text_input(
+    "city",
+    placeholder="🔍  Type city name here...",
+    label_visibility="collapsed",
+    key="city_field"
+)
+
+# When user types in city field — mark it active and clear coords
+if city_input.strip():
+    st.session_state.active_field = "city"
+
+# ── OR divider ────────────────────────────────────────────────────────────────
+st.markdown("""
+<div style="display:flex;align-items:center;margin:10px 0 6px 0;">
+  <div style="flex:1;height:1px;background:rgba(255,255,255,0.12);"></div>
+  <span style="color:rgba(255,255,255,0.3);font-size:12px;
+               padding:0 12px;letter-spacing:1px;">OR</span>
+  <div style="flex:1;height:1px;background:rgba(255,255,255,0.12);"></div>
+</div>
+""", unsafe_allow_html=True)
+
+# ── GPS button ────────────────────────────────────────────────────────────────
+components.html("""
+<!DOCTYPE html>
+<html>
+<head><style>
+  *{box-sizing:border-box;}
+  body{margin:0;padding:4px 0;background:transparent;
+       font-family:sans-serif;text-align:center;}
+  #btn{
+    background:linear-gradient(135deg,#27ae60,#1a5276);
+    color:white;border:none;border-radius:50px;
+    padding:11px 32px;font-size:16px;cursor:pointer;
+    font-weight:600;box-shadow:0 4px 15px rgba(39,174,96,0.35);
+  }
+  #btn:disabled{opacity:0.6;cursor:not-allowed;}
+  #coords_box{
+    display:none;
+    background:rgba(255,255,255,0.08);
+    border:1.5px dashed rgba(255,255,255,0.35);
+    border-radius:14px;padding:11px 18px;
+    margin:10px auto 0;max-width:340px;cursor:pointer;
+  }
+  #coords_text{color:white;font-size:15px;font-weight:600;}
+  #coords_hint{color:rgba(255,255,255,0.5);font-size:11px;margin-top:3px;}
+  #status{font-size:13px;margin-top:8px;min-height:18px;
+          color:rgba(255,255,255,0.55);}
+</style></head>
+<body>
+<button id="btn" onclick="locate()">📍 Use My Location</button>
+<div id="coords_box" onclick="copyIt()">
+  <div id="coords_text"></div>
+  <div id="coords_hint">👆 Tap to copy · paste in the field below · press Go</div>
+</div>
+<p id="status"></p>
+<script>
+var CV="";
+function locate(){
+  var btn=document.getElementById("btn"),st=document.getElementById("status");
+  if(!navigator.geolocation){st.innerText="❌ GPS not supported.";return;}
+  btn.innerText="⏳ Detecting..."; btn.disabled=true;
+  st.innerText="Allow location when browser asks...";
+  navigator.geolocation.getCurrentPosition(
+    function(p){
+      var lat=p.coords.latitude.toFixed(5),lon=p.coords.longitude.toFixed(5);
+      CV=lat+","+lon;
+      btn.innerText="📍 Use My Location"; btn.disabled=false;
+      document.getElementById("coords_text").innerText="📌 "+lat+", "+lon;
+      document.getElementById("coords_box").style.display="block";
+      st.innerText="✅ Tap box to copy → paste below → press Go";
+      st.style.color="#f39c12";
+    },
+    function(e){
+      btn.innerText="📍 Use My Location"; btn.disabled=false;
+      var m={1:"Blocked — allow in browser settings.",
+             2:"Position unavailable.",3:"Timed out."};
+      st.innerText="❌ "+(m[e.code]||"Error."); st.style.color="#e74c3c";
+    },
+    {enableHighAccuracy:true,timeout:12000,maximumAge:0}
+  );
+}
+function copyIt(){
+  if(!CV) return;
+  var hint=document.getElementById("coords_hint");
+  navigator.clipboard.writeText(CV).then(function(){
+    hint.innerText="✅ Copied! Paste below and press Go";
+    hint.style.color="#2ecc71";
+  }).catch(function(){
+    var r=document.createRange();
+    r.selectNode(document.getElementById("coords_text"));
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(r);
+  });
+}
+</script>
+</body></html>
+""", height=160)
+
+# ── Coords paste field ────────────────────────────────────────────────────────
+# Show cleared if city was just typed
+coords_default = "" if city_input.strip() else st.session_state.get("last_coords","")
+coords_input = st.text_input(
+    "📌 Or paste coordinates here:",
+    key="coords_input",
+    placeholder="e.g.  19.17001, 72.84542",
+    label_visibility="visible",
+)
+
+# When user pastes coords — mark it active
+if coords_input.strip() and "," in coords_input:
+    st.session_state.active_field = "coords"
+    st.session_state["last_coords"] = coords_input.strip()
+
+# Show which field is active as a subtle hint
+if city_input.strip() and coords_input.strip():
+    # Both filled — show warning so user knows what will happen
+    st.markdown("""
+    <div style="background:rgba(243,156,18,0.15);border:1px solid rgba(243,156,18,0.4);
+                border-radius:12px;padding:10px 16px;font-size:13px;
+                color:rgba(255,220,100,0.9);text-align:center;margin:4px 0;">
+        ⚠️ Both fields have values — <b>clear one</b> before pressing Go.<br>
+        City search field is active. Clear it to use coordinates instead.
+    </div>
+    """, unsafe_allow_html=True)
+
+# ── Single GO button ──────────────────────────────────────────────────────────
+go_col1, go_col2, go_col3 = st.columns([1, 2, 1])
+with go_col2:
+    go_btn = st.button("Go  🔍", use_container_width=True, type="primary")
+
+if go_btn:
+    city_clean  = city_input.strip()
+    coords_clean = coords_input.strip().replace(" ", "")
+
+    if city_clean and coords_clean:
+        # Both filled — show clear instruction, do nothing
+        st.warning("⚠️ Please clear one field before pressing Go.")
+
+    elif city_clean:
+        # Only city — use it
+        st.session_state.city = city_clean
+        st.session_state.coords_processed = ""
+
+    elif coords_clean and "," in coords_clean:
+        # Only coords — use them
+        if coords_clean != st.session_state.coords_processed:
+            try:
+                parts = coords_clean.split(",")
+                lat, lon = float(parts[0]), float(parts[1])
+                if -90 <= lat <= 90 and -180 <= lon <= 180:
+                    with st.spinner("Finding your city..."):
+                        detected_city, _ = get_city_from_coords(lat, lon)
+                    if detected_city:
+                        st.session_state.city = detected_city
+                        st.session_state.coords_processed = coords_clean
+                        st.success(f"📍 Location set to **{detected_city}**")
+                    else:
+                        st.warning("Could not identify city. Try searching by name.")
+            except Exception:
+                st.warning("Invalid coordinates format.")
+    else:
+        st.info("Enter a city name or paste coordinates above.")
 
 # ── Check API key ─────────────────────────────────────────────────────────────
 if not API_KEY:
