@@ -254,6 +254,19 @@ def get_forecast(city: str):
         return r.json(), None
     return None, "Could not fetch forecast."
 
+def get_city_from_coords(lat: float, lon: float):
+    """Reverse geocode lat/lon to city name using OpenWeatherMap."""
+    try:
+        url = f"{BASE_URL}/weather"
+        params = {"lat": lat, "lon": lon, "appid": API_KEY, "units": "metric"}
+        r = requests.get(url, params=params, timeout=10)
+        if r.status_code == 200:
+            return r.json().get("name", None), None
+        return None, "Could not detect city from coordinates."
+    except Exception as e:
+        return None, f"Reverse geocoding failed: {e}"
+
+
 def parse_daily_forecast(forecast_data):
     """Extract one entry per day (noon reading preferred)."""
     daily = {}
@@ -286,23 +299,159 @@ def parse_daily_forecast(forecast_data):
     return result
 
 # ── UI ────────────────────────────────────────────────────────────────────────
+import streamlit.components.v1 as components
+
 st.markdown('<div class="app-title">🌤️ WEATHER</div>', unsafe_allow_html=True)
 
-# Search bar
+# ── Default city ──────────────────────────────────────────────────────────────
+if "city" not in st.session_state:
+    st.session_state.city = "Mumbai"
+if "coords_processed" not in st.session_state:
+    st.session_state.coords_processed = ""
+
+# ── Search bar ────────────────────────────────────────────────────────────────
 col1, col2 = st.columns([4, 1])
 with col1:
-    city_input = st.text_input("city", placeholder="Search city...", label_visibility="collapsed")
+    city_input = st.text_input("city", placeholder="🔍  Search city...",
+                                label_visibility="collapsed")
 with col2:
     search_btn = st.button("Go", use_container_width=True)
 
-# Default city
-if "city" not in st.session_state:
-    st.session_state.city = "Mumbai"
-
 if search_btn and city_input.strip():
     st.session_state.city = city_input.strip()
-elif not city_input and not search_btn:
-    pass  # use session state default
+    st.session_state.coords_processed = ""
+
+# ── Divider ───────────────────────────────────────────────────────────────────
+st.markdown("""
+<div style="display:flex;align-items:center;margin:12px 0;">
+  <div style="flex:1;height:1px;background:rgba(255,255,255,0.12);"></div>
+  <span style="color:rgba(255,255,255,0.3);font-size:12px;
+               padding:0 12px;letter-spacing:1px;">OR</span>
+  <div style="flex:1;height:1px;background:rgba(255,255,255,0.12);"></div>
+</div>
+""", unsafe_allow_html=True)
+
+# ── GPS section ───────────────────────────────────────────────────────────────
+components.html("""
+<!DOCTYPE html>
+<html>
+<head><style>
+  *{box-sizing:border-box;}
+  body{margin:0;padding:4px 0;background:transparent;
+       font-family:sans-serif;text-align:center;}
+  #btn{
+    background:linear-gradient(135deg,#27ae60,#1a5276);
+    color:white;border:none;border-radius:50px;
+    padding:11px 32px;font-size:16px;cursor:pointer;
+    font-weight:600;box-shadow:0 4px 15px rgba(39,174,96,0.35);
+    transition:opacity 0.2s;
+  }
+  #btn:disabled{opacity:0.6;cursor:not-allowed;}
+  #coords_box{
+    display:none;
+    background:rgba(255,255,255,0.08);
+    border:1.5px dashed rgba(255,255,255,0.35);
+    border-radius:14px;padding:11px 18px;
+    margin:12px auto 0;max-width:340px;
+    cursor:pointer;transition:background 0.2s;
+  }
+  #coords_box:hover{background:rgba(255,255,255,0.14);}
+  #coords_text{color:white;font-size:15px;font-weight:600;
+               letter-spacing:0.3px;}
+  #coords_hint{color:rgba(255,255,255,0.5);font-size:11px;margin-top:3px;}
+  #status{font-size:13px;margin-top:8px;min-height:18px;
+          color:rgba(255,255,255,0.55);}
+</style></head>
+<body>
+<button id="btn" onclick="locate()">📍 Use My Location</button>
+
+<div id="coords_box" onclick="copyIt()">
+  <div id="coords_text"></div>
+  <div id="coords_hint">👆 Tap to copy · then paste in the field below</div>
+</div>
+
+<p id="status"></p>
+
+<script>
+var CV = "";
+function locate(){
+  var btn=document.getElementById("btn");
+  var st=document.getElementById("status");
+  if(!navigator.geolocation){
+    st.innerText="❌ GPS not supported by this browser.";
+    st.style.color="#e74c3c"; return;
+  }
+  btn.innerText="⏳ Detecting..."; btn.disabled=true;
+  st.innerText="Please allow location access when prompted...";
+  st.style.color="rgba(255,255,255,0.55)";
+  navigator.geolocation.getCurrentPosition(
+    function(p){
+      var lat=p.coords.latitude.toFixed(5);
+      var lon=p.coords.longitude.toFixed(5);
+      CV=lat+","+lon;
+      btn.innerText="📍 Use My Location"; btn.disabled=false;
+      document.getElementById("coords_text").innerText="📌 "+lat+", "+lon;
+      document.getElementById("coords_box").style.display="block";
+      st.innerText="✅ Got it! Tap the box above to copy, then paste below ↓";
+      st.style.color="#f39c12";
+    },
+    function(e){
+      btn.innerText="📍 Use My Location"; btn.disabled=false;
+      var m={1:"Location blocked — tap 🔒 in browser bar to allow.",
+             2:"Position unavailable — try again.",
+             3:"Request timed out — try again."};
+      st.innerText="❌ "+(m[e.code]||"Unknown error.");
+      st.style.color="#e74c3c";
+    },
+    {enableHighAccuracy:true,timeout:12000,maximumAge:0}
+  );
+}
+function copyIt(){
+  if(!CV) return;
+  var hint=document.getElementById("coords_hint");
+  navigator.clipboard.writeText(CV).then(function(){
+    hint.innerText="✅ Copied! Now paste in the field below and press Enter";
+    hint.style.color="#2ecc71";
+  }).catch(function(){
+    // manual select fallback
+    var r=document.createRange();
+    r.selectNode(document.getElementById("coords_text"));
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(r);
+    hint.innerText="Select all → Copy → Paste below";
+  });
+}
+</script>
+</body></html>
+""", height=170)
+
+# ── Coords paste field ────────────────────────────────────────────────────────
+coords_input = st.text_input(
+    "📌 Paste coordinates here and press Enter:",
+    key="coords_input",
+    placeholder="e.g.  19.17001, 72.84542",
+    label_visibility="visible"
+)
+
+# Process coords only once (avoid rerun loop)
+if (coords_input
+        and "," in coords_input
+        and coords_input.strip() != st.session_state.coords_processed):
+    try:
+        parts = coords_input.strip().replace(" ", "").split(",")
+        lat, lon = float(parts[0]), float(parts[1])
+        # Sanity check — valid lat/lon range
+        if -90 <= lat <= 90 and -180 <= lon <= 180:
+            with st.spinner("Finding your city..."):
+                detected_city, loc_err = get_city_from_coords(lat, lon)
+            if detected_city:
+                st.session_state.city = detected_city
+                st.session_state.coords_processed = coords_input.strip()
+                st.success(f"📍 Location set to **{detected_city}** — scroll down for weather!")
+            else:
+                st.warning("Could not identify city from those coordinates.")
+    except Exception:
+        pass  # ignore partial/invalid input while typing
 
 # ── Check API key ─────────────────────────────────────────────────────────────
 if not API_KEY:
